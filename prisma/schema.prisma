@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  name      String?
+  role      String    @default("USER") // Pode ser "USER" ou "ADMIN"
+  createdAt DateTime  @default(now())
+
+  accounts  Account[]
+  bookings  Booking[]
+}
+
+model Account {
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String? @db.Text
+  access_token             String? @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String? @db.Text
+  session_state            String?
+  refresh_token_expires_in Int?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Room {
+  id          String     @id @default(uuid())
+  name        String
+  description String
+  capacity    Int
+  bookings    Booking[]
+  createdAt   DateTime   @default(now())
+}
+
+model Booking {
+  id        String   @id @default(uuid())
+  roomId    String
+  userId    String 
+  startTime DateTime
+  endTime   DateTime
+  attendees String?
+  createdAt DateTime @default(now())
+
+  room Room  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
