@@ -18,7 +18,7 @@ async function checkAdminPermission() {
   return session.user;
 }
 
-// 🏢 1. Criar Sala (Restrito a ADMIN)
+//  1. Criar Sala (Restrito a ADMIN)
 export async function createRoom(formData: FormData) {
   try {
     await checkAdminPermission();
@@ -47,7 +47,7 @@ export async function createRoom(formData: FormData) {
   }
 }
 
-// ✏️ 2. Editar Sala (Restrito a ADMIN)
+// 2. Editar Sala (Restrito a ADMIN)
 export async function updateRoom(roomId: string, formData: FormData) {
   try {
     await checkAdminPermission();
@@ -77,7 +77,7 @@ export async function updateRoom(roomId: string, formData: FormData) {
   }
 }
 
-// 🗑️ 3. Deletar Sala (Restrito a ADMIN)
+// 3. Deletar Sala (Restrito a ADMIN)
 export async function deleteRoom(roomId: string) {
   try {
     await checkAdminPermission();
@@ -94,7 +94,7 @@ export async function deleteRoom(roomId: string) {
   }
 }
 
-// 📅 4. Criar Agendamento / Reserva (Qualquer Usuário Logado)
+// 4. Criar Agendamento / Reserva (Qualquer Usuário Logado)
 export async function createBooking(formData: FormData) {
   try {
     const session = await auth();

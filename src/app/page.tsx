@@ -41,7 +41,7 @@ export default async function HomePage() {
             Meus Agendamentos
           </Link>
 
-          {/* 👈 Se o usuário for ADMIN, mostra o atalho para o Painel */}
+          {/* Se o usuário for ADMIN, mostra o atalho para o Painel */}
           {userRole === 'ADMIN' && (
             <Link 
               href="/admin" 
@@ -52,7 +52,7 @@ export default async function HomePage() {
             </Link>
           )}
 
-          {/* 👈 Botão de Sair da conta */}
+          {/* Botão de Sair da conta */}
           <LogoutButton />
         </nav>
       </header>

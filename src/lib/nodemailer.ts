@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 
-// Configuração do transporte SMTP
 const host = process.env.SMTP_HOST || process.env.ALERT_EMAIL_SMTP_HOST;
 const port = Number(process.env.SMTP_PORT || process.env.ALERT_EMAIL_SMTP_PORT) || 587;
 const user = process.env.SMTP_USER || process.env.ALERT_EMAIL_SMTP_USER;
@@ -39,7 +38,7 @@ export async function sendBookingEmailWithCalendar({
   organizerName,
   organizerEmail,
 }: SendBookingEmailProps) {
-  // 1. Limpeza e higienização dos e-mails sem duplicatas
+  // 1. Limpeza e ajuste dos e-mails sem duplicatas
   const validRecipients = Array.from(
     new Set(
       to
@@ -54,7 +53,6 @@ export async function sendBookingEmailWithCalendar({
   }
 
   // 2. Separação de Destinatário Principal (TO) e Cópia (CC)
-  // Garante que o e-mail do organizador fique no TO e o restante vá para o CC
   const primaryRecipient = validRecipients.includes(organizerEmail.toLowerCase())
     ? organizerEmail.toLowerCase()
     : validRecipients[0];
@@ -64,7 +62,7 @@ export async function sendBookingEmailWithCalendar({
   const senderEmail = user || 'no-reply@serraverdeexpress.com.br';
   const formattedDate = date.includes('-') ? date.split('-').reverse().join('/') : date;
 
-  // --- Gerador de Link do Outlook ---
+  // Gerador de Link do Outlook
   const [year, month, day] = date.split('-');
   const [startHour, startMin] = startTime.split(':');
   const [endHour, endMin] = endTime.split(':');

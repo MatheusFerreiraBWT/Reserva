@@ -52,7 +52,7 @@ async function getAdminData() {
   return { bookings, rooms };
 }
 
-// Botão de Sair específico para o tema escuro do Admin
+// Botão de Sair do Admin
 function AdminLogoutButton() {
   return (
     <form
@@ -117,7 +117,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        {/* --- SEÇÃO 1: GERENCIAMENTO DE SALAS --- */}
+        {/* SEÇÃO 1: GERENCIAMENTO DE SALAS */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
@@ -184,7 +184,7 @@ export default async function AdminPage() {
           )}
         </div>
 
-        {/* --- SEÇÃO 2: CALENDÁRIO / AGENDA INTERATIVA --- */}
+        {/* SEÇÃO 2: CALENDÁRIO / AGENDA INTERATIVA */}
         <AdminCalendar bookings={bookings} rooms={rooms} />
 
       </main>

@@ -23,12 +23,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  /*
-   * Protege TODAS as rotas do sistema, exceto:
-   * - api (rotas internas da API)
-   * - _next/static (arquivos estáticos do Next)
-   * - _next/image (otimização de imagens)
-   * - favicon.ico, imagens, etc.
-   */
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-// 👈 Configuração do Título e do Favicon da aplicação
+// Configuração do Título e do Favicon da aplicação
 export const metadata: Metadata = {
   title: "ReservaSalas - Sistema de Agendamento",
   description: "Gerencie e agende suas salas de reunião de forma simples.",

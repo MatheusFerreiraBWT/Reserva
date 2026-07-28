@@ -65,7 +65,7 @@ export async function createBooking(formData: FormData) {
       },
     });
 
-    // 2. Trata e higieniza e-mails
+    // 2. Trata e arruma e-mails
     const creatorEmail = String(session.user.email).trim().toLowerCase();
     const creatorName = session.user.name || 'Colaborador';
 
@@ -83,7 +83,7 @@ export async function createBooking(formData: FormData) {
 
     console.log('📌 Destinatários do agendamento:', recipients);
 
-    // DISPARA E-MAIL COM CONVITE DE AGENDA
+    // Dispara os emails
     if (recipients.length > 0) {
       try {
         await sendBookingEmailWithCalendar({
@@ -159,7 +159,7 @@ export async function deleteBooking(bookingId: string) {
       timeZone: 'America/Sao_Paulo',
     });
 
-    // ENVIA AVISO DE CANCELAMENTO
+    // Aviso de cancelamento
     if (recipients.length > 0) {
       try {
         await sendCancellationEmail({
