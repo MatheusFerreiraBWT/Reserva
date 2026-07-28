@@ -1,9 +1,9 @@
 import { prisma } from '../../lib/prisma';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Clock, Trash2, MapPin } from 'lucide-react';
-import { deleteBooking } from '../actions/booking-actions';
+import { ArrowLeft, Calendar } from 'lucide-react';
 import { auth } from '@/auth';
-import { LogoutButton } from '@/components/LogoutButton'; // 👈 Importando o botão de sair
+import { LogoutButton } from '@/components/LogoutButton';
+import { BookingCard } from '@/components/BookingCard';
 
 async function getMyBookings() {
   const session = await auth();
@@ -39,7 +39,7 @@ export default async function MeusAgendamentosPage() {
         <nav className="flex items-center gap-6 text-sm text-slate-600">
           <Link href="/" className="hover:text-slate-900">Salas</Link>
           <Link href="/meus-agendamentos" className="font-semibold text-slate-900">Meus Agendamentos</Link>
-          <LogoutButton /> {/* 👈 Botão de Sair posicionado aqui */}
+          <LogoutButton />
         </nav>
       </header>
 
@@ -82,72 +82,9 @@ export default async function MeusAgendamentosPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {bookings.map((b) => {
-              const startDate = new Date(b.startTime);
-              const endDate = new Date(b.endTime);
-
-              const dateFormatted = startDate.toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              });
-
-              const startTimeFormatted = startDate.toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              });
-
-              const endTimeFormatted = endDate.toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              });
-
-              return (
-                <div
-                  key={b.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between relative group hover:border-blue-300 transition-all"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
-                        <MapPin className="w-3.5 h-3.5" />
-                        Sala {b.room.name}
-                      </span>
-
-                      <form
-                        action={async () => {
-                          'use server';
-                          await deleteBooking(b.id);
-                        }}
-                      >
-                        <button
-                          type="submit"
-                          title="Cancelar Agendamento"
-                          className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </form>
-                    </div>
-
-                    <p className="text-xs text-slate-500 mb-4 line-clamp-1">
-                      {b.room.description || 'Sem descrição'}
-                    </p>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-700">
-                    <span className="flex items-center gap-1 font-medium">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      {dateFormatted}
-                    </span>
-                    <span className="flex items-center gap-1 font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      {startTimeFormatted} - {endTimeFormatted}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+            {bookings.map((b) => (
+              <BookingCard key={b.id} booking={b} />
+            ))}
           </div>
         )}
       </main>
