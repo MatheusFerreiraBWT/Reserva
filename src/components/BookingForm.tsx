@@ -78,34 +78,29 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
     });
   };
 
-  // 👈 Lógica definitiva para selecionar Início e Fim em dois cliques
   const handleSlotClick = (slotStart: string, slotEnd: string) => {
     setErrorMsg('');
 
-    // Se não há startTime OU se já temos os dois definidos (recomeça a seleção)
-    if (!startTime || (startTime && endTime)) {
+    // 1. Se ainda não tem nada selecionado: marca 1 hora (1 clique só)
+    if (!startTime) {
       setStartTime(slotStart);
+      setEndTime(slotEnd);
+      return;
+    }
+
+    // 2. Se clicar no mesmo slot único de 1 hora: desmarca tudo
+    if (startTime === slotStart && endTime === slotEnd) {
+      setStartTime(null);
       setEndTime(null);
-    } 
-    // Se já temos o startTime e estamos escolhendo o endTime
-    else if (startTime && !endTime) {
-      if (slotStart < startTime) {
-        // Se clicar em um horário anterior, ele se torna o novo startTime
-        setStartTime(slotStart);
-        setEndTime(null);
-        return;
-      }
+      return;
+    }
 
-      if (slotStart === startTime) {
-        // Se clicar no mesmo horário duas vezes, define um bloco único de 1 hora
-        setEndTime(slotEnd);
-        return;
-      }
-
-      // Se clicar em um horário posterior, valida o intervalo completo
+    // 3. Se já tem um horário inicial e clicou em um horário POSTERIOR: expande o intervalo
+    if (slotStart > startTime) {
       const startIndex = TIME_SLOTS.findIndex((s) => s.start === startTime);
       const endIndex = TIME_SLOTS.findIndex((s) => s.end === slotEnd);
 
+      // Valida se não existe nenhum horário ocupado ou passado no meio do caminho
       let hasConflict = false;
       for (let i = startIndex; i <= endIndex; i++) {
         const currentSlot = TIME_SLOTS[i];
@@ -116,14 +111,19 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
       }
 
       if (hasConflict) {
-        setErrorMsg('O intervalo selecionado contém horários ocupados ou já passados.');
+        setErrorMsg('O intervalo selecionado possui horários indisponíveis ou passados.');
         setStartTime(slotStart);
-        setEndTime(null);
+        setEndTime(slotEnd);
         return;
       }
 
       setEndTime(slotEnd);
+      return;
     }
+
+    // 4. Se clicar em um horário ANTERIOR ao horário inicial: define esse novo horário como início (1 hora)
+    setStartTime(slotStart);
+    setEndTime(slotEnd);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,7 +133,7 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
       return;
     }
     if (!startTime || !endTime) {
-      setErrorMsg('Selecione o horário de início e término.');
+      setErrorMsg('Selecione um horário.');
       return;
     }
 
@@ -285,11 +285,9 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
           )}
         </div>
         <p className="text-xs text-slate-500 mb-3">
-          {startTime && !endTime 
-            ? '1º Passo OK! Agora clique no horário de término (ou clique no mesmo para 1h).' 
-            : startTime && endTime
+          {startTime && endTime
             ? `Período selecionado: das ${startTime} às ${endTime}`
-            : 'Passo 1: Clique no horário inicial da reunião.'}
+            : 'Clique em um horário (para 1h) ou em dois horários para agendar um período.'}
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -301,8 +299,6 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
             let isInRange = false;
             if (startTime && endTime) {
               isInRange = slot.start >= startTime && slot.end <= endTime;
-            } else if (startTime === slot.start) {
-              isInRange = true;
             }
 
             return (
@@ -344,9 +340,7 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
           {isLoading 
             ? 'Confirmando...' 
             : startTime && endTime 
-            ? startTime === endTime 
-              ? `Reservar das ${startTime} às ${endTime}` 
-              : `Reservar período das ${startTime} às ${endTime}`
+            ? `Reservar das ${startTime} às ${endTime}` 
             : 'Selecione o horário'}
         </button>
       </div>
