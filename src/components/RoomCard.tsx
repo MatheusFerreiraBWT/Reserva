@@ -11,9 +11,10 @@ interface RoomProps {
     description: string;
     capacity: number;
   };
+  isAdmin?: boolean; // Adicionado aqui
 }
 
-export function RoomCard({ room }: RoomProps) {
+export function RoomCard({ room, isAdmin = false }: RoomProps) {
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm(`Tem certeza que deseja apagar a sala "${room.name}"?`)) {
@@ -23,14 +24,17 @@ export function RoomCard({ room }: RoomProps) {
 
   return (
     <div className="group relative rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between">
-      {/* Botão de Apagar */}
-      <button
-        onClick={handleDelete}
-        title="Excluir Sala"
-        className="absolute top-2 right-2 z-10 p-1.5 bg-black/40 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
+      
+      {/* Botão de Apagar (Renderizado APENAS se isAdmin for true) */}
+      {isAdmin && (
+        <button
+          onClick={handleDelete}
+          title="Excluir Sala"
+          className="absolute top-2 right-2 z-10 p-1.5 bg-black/40 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
 
       {/* Header com Azul Padrão */}
       <div className="h-24 bg-gradient-to-br from-blue-600 to-indigo-700 p-4 text-white flex flex-col justify-between rounded-t-2xl">
