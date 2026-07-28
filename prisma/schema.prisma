@@ -56,6 +56,7 @@ model Booking {
   endTime   DateTime
   attendees String?
   createdAt DateTime @default(now())
+  outlookEventId String?
 
   room Room  @relation(fields: [roomId], references: [id], onDelete: Cascade)
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)

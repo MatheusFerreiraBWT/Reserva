@@ -113,3 +113,29 @@ export async function sendOutlookEmail({
     return { success: false };
   }
 }
+
+export async function deleteOutlookCalendarEvent({
+  accessToken,
+  eventId,
+}: {
+  accessToken: string;
+  eventId: string;
+}) {
+  try {
+    const response = await fetch(
+      `https://graph.microsoft.com/v1.0/me/events/${eventId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Erro ao deletar evento no Outlook Graph:', await response.text());
+    }
+  } catch (error) {
+    console.error('Erro na chamada da API Graph para deletar evento:', error);
+  }
+}
