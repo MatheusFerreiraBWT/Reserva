@@ -58,7 +58,7 @@ export async function createBooking(formData: FormData) {
       where: { id: roomId },
     });
 
-    // 1. Cria a reserva no banco de dados
+    // 1. Cria a reserva no banco de dados imediatamente
     const booking = await prisma.booking.create({
       data: {
         roomId,
@@ -69,7 +69,7 @@ export async function createBooking(formData: FormData) {
       },
     });
 
-    // 2. Integração com Outlook
+    // 2. Busca token do Outlook
     const userAccount = await prisma.account.findFirst({
       where: {
         userId: session.user.id,
@@ -79,37 +79,34 @@ export async function createBooking(formData: FormData) {
 
     const accessToken = userAccount?.access_token;
 
+    // ⚡ EXECUTAR INTEGRAÇÃO DA MICROSOFT EM SEGUNDO PLANO (SEM AWAIT)
     if (accessToken) {
       const formattedDate = dateStr.split('-').reverse().join('/');
       const emailList = attendees 
         ? attendees.split(',').map((e) => e.trim()).filter((e) => e.includes('@'))
         : [];
 
-      // Cria evento no calendário e obtém a resposta de forma tratada
-      const result: any = await createOutlookCalendarEvent({
+      // Dispara criação do evento em background
+      createOutlookCalendarEvent({
         accessToken,
         roomName: room?.name || 'Reunião',
         dateStr,
         startTimeStr,
         endTimeStr,
         attendeesEmails: emailList,
-      }).catch((err) => {
-        console.error("Erro ao criar evento no Outlook:", err);
-        return null;
-      });
+      })
+        .then(async (result: any) => {
+          const eventId = typeof result === 'string' ? result : result?.eventId;
+          if (eventId) {
+            await prisma.booking.update({
+              where: { id: booking.id },
+              data: { outlookEventId: eventId },
+            });
+          }
+        })
+        .catch((err) => console.error("Erro no evento do Outlook em background:", err));
 
-      // Pega a string do ID (caso venha string ou como objeto { eventId: ... })
-      const eventId = typeof result === 'string' ? result : result?.eventId;
-
-      // Se o evento foi criado no Outlook, vinculamos o ID ao agendamento
-      if (eventId) {
-        await prisma.booking.update({
-          where: { id: booking.id },
-          data: { outlookEventId: eventId },
-        });
-      }
-
-      // Envia e-mail de confirmação
+      // Dispara e-mail em background
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #2563eb; margin-top: 0;">Reserva Confirmada! 🏢</h2>
@@ -130,12 +127,10 @@ export async function createBooking(formData: FormData) {
         toEmail: session.user.email,
         subject: `Confirmação de Agendamento - Sala ${room?.name}`,
         htmlContent: emailHtml,
-      }).catch((err) => console.error("Erro ao enviar e-mail:", err));
+      }).catch((err) => console.error("Erro no envio de e-mail em background:", err));
     }
 
     revalidatePath('/meus-agendamentos');
-    revalidatePath('/agendar');
-    revalidatePath('/');
     return { success: true };
   } catch (error: any) {
     console.error('Erro ao criar agendamento:', error);
@@ -160,7 +155,7 @@ export async function deleteBooking(bookingId: string) {
       return { error: 'Agendamento não encontrado.' };
     }
 
-    // Busca o token do usuário para notificar e deletar no Outlook
+    // Busca o token da conta
     const userAccount = await prisma.account.findFirst({
       where: {
         userId: session.user.id,
@@ -170,16 +165,20 @@ export async function deleteBooking(bookingId: string) {
 
     const accessToken = userAccount?.access_token;
 
+    // ⚡ DELETA NO BANCO PRIMEIRO (RESPOSTA INSTANTÂNEA)
+    await prisma.booking.delete({
+      where: { id: bookingId },
+    });
+
+    // ⚡ REMOVE DO OUTLOOK E ENVIA E-MAIL EM SEGUNDO PLANO
     if (accessToken) {
-      // 1. Deleta o evento do Calendário do Outlook se houver ID salvo
       if (booking.outlookEventId) {
-        await deleteOutlookCalendarEvent({
+        deleteOutlookCalendarEvent({
           accessToken,
           eventId: booking.outlookEventId,
-        }).catch((err) => console.error("Erro ao apagar evento no Outlook:", err));
+        }).catch((err) => console.error("Erro ao apagar evento no Outlook em background:", err));
       }
 
-      // 2. Envia e-mail avisando sobre o cancelamento
       const cancelHtml = `
         <div style="font-family: Arial, sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #dc2626; margin-top: 0;">Reserva Cancelada ❌</h2>
@@ -198,17 +197,10 @@ export async function deleteBooking(bookingId: string) {
         toEmail: session.user.email,
         subject: `Cancelamento de Agendamento - Sala ${booking.room?.name}`,
         htmlContent: cancelHtml,
-      }).catch((err) => console.error("Erro ao enviar e-mail de cancelamento:", err));
+      }).catch((err) => console.error("Erro ao enviar e-mail em background:", err));
     }
 
-    // 3. Apaga do banco de dados do sistema
-    await prisma.booking.delete({
-      where: { id: bookingId },
-    });
-
     revalidatePath('/meus-agendamentos');
-    revalidatePath('/agendar');
-    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('Erro ao cancelar agendamento:', error);
