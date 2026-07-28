@@ -3,11 +3,7 @@
 import { prisma } from '../../lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
-import { 
-  createOutlookCalendarEvent, 
-  sendOutlookEmail, 
-  deleteOutlookCalendarEvent 
-} from '@/lib/outlook';
+import { sendBookingEmailWithCalendar, sendCancellationEmail } from '@/lib/nodemailer';
 
 export async function createBooking(formData: FormData) {
   try {
@@ -21,7 +17,7 @@ export async function createBooking(formData: FormData) {
     const dateStr = formData.get('date') as string;
     const startTimeStr = formData.get('startTime') as string;
     const endTimeStr = formData.get('endTime') as string;
-    const attendees = formData.get('attendees') as string;
+    const attendeesInput = (formData.get('attendees') as string) || '';
 
     if (!roomId || !dateStr || !startTimeStr || !endTimeStr) {
       return { error: 'Preencha todos os campos obrigatórios, incluindo o horário de término.' };
@@ -58,76 +54,54 @@ export async function createBooking(formData: FormData) {
       where: { id: roomId },
     });
 
-    // 1. Cria a reserva no banco de dados imediatamente
+    // 1. Cria a reserva no banco de dados
     const booking = await prisma.booking.create({
       data: {
         roomId,
         userId: session.user.id,
         startTime,
         endTime,
-        attendees: attendees || null,
+        attendees: attendeesInput.trim() || null,
       },
     });
 
-    // 2. Busca token do Outlook
-    const userAccount = await prisma.account.findFirst({
-      where: {
-        userId: session.user.id,
-        provider: 'microsoft-entra-id',
-      },
-    });
+    // 2. Trata e higieniza e-mails
+    const creatorEmail = String(session.user.email).trim().toLowerCase();
+    const creatorName = session.user.name || 'Colaborador';
 
-    const accessToken = userAccount?.access_token;
+    const extraEmails = attendeesInput
+      ? attendeesInput
+          .split(',')
+          .map((e) => e.trim().toLowerCase())
+          .filter((e) => e.length > 0 && e.includes('@'))
+      : [];
 
-    // ⚡ EXECUTAR INTEGRAÇÃO DA MICROSOFT EM SEGUNDO PLANO (SEM AWAIT)
-    if (accessToken) {
-      const formattedDate = dateStr.split('-').reverse().join('/');
-      const emailList = attendees 
-        ? attendees.split(',').map((e) => e.trim()).filter((e) => e.includes('@'))
-        : [];
+    // Garante que o criador esteja sempre na lista e remove duplicados
+    const recipients = Array.from(new Set([creatorEmail, ...extraEmails])).filter(
+      (email): email is string => Boolean(email && email.includes('@'))
+    );
 
-      // Dispara criação do evento em background
-      createOutlookCalendarEvent({
-        accessToken,
-        roomName: room?.name || 'Reunião',
-        dateStr,
-        startTimeStr,
-        endTimeStr,
-        attendeesEmails: emailList,
-      })
-        .then(async (result: any) => {
-          const eventId = typeof result === 'string' ? result : result?.eventId;
-          if (eventId) {
-            await prisma.booking.update({
-              where: { id: booking.id },
-              data: { outlookEventId: eventId },
-            });
-          }
-        })
-        .catch((err) => console.error("Erro no evento do Outlook em background:", err));
+    console.log('📌 Destinatários do agendamento:', recipients);
 
-      // Dispara e-mail em background
-      const emailHtml = `
-        <div style="font-family: Arial, sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-          <h2 style="color: #2563eb; margin-top: 0;">Reserva Confirmada! 🏢</h2>
-          <p>Olá,</p>
-          <p>Sua reserva para a <strong>Sala ${room?.name}</strong> foi realizada com sucesso.</p>
-          
-          <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 5px 0;"><strong>ID da Reserva:</strong> ${booking.id}</p>
-            <p style="margin: 5px 0;"><strong>Data:</strong> ${formattedDate}</p>
-            <p style="margin: 5px 0;"><strong>Horário:</strong> ${startTimeStr} às ${endTimeStr}</p>
-            ${attendees ? `<p style="margin: 5px 0;"><strong>Participantes:</strong> ${attendees}</p>` : ''}
-          </div>
-        </div>
-      `;
-
-      sendOutlookEmail({
-        accessToken,
-        toEmail: session.user.email,
-        subject: `Confirmação de Agendamento - Sala ${room?.name}`,
-        htmlContent: emailHtml,
-      }).catch((err) => console.error("Erro no envio de e-mail em background:", err));
+    // DISPARA E-MAIL COM CONVITE DE AGENDA
+    if (recipients.length > 0) {
+      try {
+        await sendBookingEmailWithCalendar({
+          to: recipients,
+          roomName: room?.name || 'Reunião',
+          date: dateStr,
+          startTime: startTimeStr,
+          endTime: endTimeStr,
+          organizerName: creatorName,
+          organizerEmail: creatorEmail,
+          bookingId: booking.id,
+        });
+        console.log('✅ Convite de e-mail/calendário enviado com sucesso!');
+      } catch (err) {
+        console.error('❌ Erro real de envio:', err);
+      }
+    } else {
+      console.warn('⚠️ Nenhum e-mail válido foi encontrado para disparo.');
     }
 
     revalidatePath('/meus-agendamentos');
@@ -142,7 +116,7 @@ export async function deleteBooking(bookingId: string) {
   try {
     const session: any = await auth();
 
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session?.user?.email) {
       return { error: 'Você precisa estar logado para cancelar reservas.' };
     }
 
@@ -155,49 +129,50 @@ export async function deleteBooking(bookingId: string) {
       return { error: 'Agendamento não encontrado.' };
     }
 
-    // Busca o token da conta
-    const userAccount = await prisma.account.findFirst({
-      where: {
-        userId: session.user.id,
-        provider: 'microsoft-entra-id',
-      },
-    });
-
-    const accessToken = userAccount?.access_token;
-
-    // ⚡ DELETA NO BANCO PRIMEIRO (RESPOSTA INSTANTÂNEA)
+    // 1. Deleta no banco primeiro
     await prisma.booking.delete({
       where: { id: bookingId },
     });
 
-    // ⚡ REMOVE DO OUTLOOK E ENVIA E-MAIL EM SEGUNDO PLANO
-    if (accessToken) {
-      if (booking.outlookEventId) {
-        deleteOutlookCalendarEvent({
-          accessToken,
-          eventId: booking.outlookEventId,
-        }).catch((err) => console.error("Erro ao apagar evento no Outlook em background:", err));
+    // 2. Trata e higieniza e-mails dos destinatários do cancelamento
+    const creatorEmail = String(session.user.email).trim().toLowerCase();
+    const extraEmails = booking.attendees
+      ? booking.attendees
+          .split(',')
+          .map((e) => e.trim().toLowerCase())
+          .filter((e) => e.length > 0 && e.includes('@'))
+      : [];
+
+    const recipients = Array.from(new Set([creatorEmail, ...extraEmails])).filter(
+      (email): email is string => Boolean(email && email.includes('@'))
+    );
+
+    const formattedDate = new Date(booking.startTime).toLocaleDateString('pt-BR');
+    const startFormatted = new Date(booking.startTime).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
+    });
+    const endFormatted = new Date(booking.endTime).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
+    });
+
+    // ENVIA AVISO DE CANCELAMENTO
+    if (recipients.length > 0) {
+      try {
+        await sendCancellationEmail({
+          to: recipients,
+          roomName: booking.room?.name || 'Reunião',
+          date: formattedDate,
+          startTime: startFormatted,
+          endTime: endFormatted,
+        });
+        console.log('✅ E-mail de cancelamento enviado com sucesso!');
+      } catch (err) {
+        console.error('Erro ao enviar e-mail de cancelamento via SMTP:', err);
       }
-
-      const cancelHtml = `
-        <div style="font-family: Arial, sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-          <h2 style="color: #dc2626; margin-top: 0;">Reserva Cancelada ❌</h2>
-          <p>Olá,</p>
-          <p>O agendamento para a <strong>Sala ${booking.room?.name}</strong> foi cancelado com sucesso.</p>
-          
-          <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 5px 0;"><strong>Data:</strong> ${new Date(booking.startTime).toLocaleDateString('pt-BR')}</p>
-            <p style="margin: 5px 0;"><strong>Horário:</strong> ${new Date(booking.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} às ${new Date(booking.endTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}</p>
-          </div>
-        </div>
-      `;
-
-      sendOutlookEmail({
-        accessToken,
-        toEmail: session.user.email,
-        subject: `Cancelamento de Agendamento - Sala ${booking.room?.name}`,
-        htmlContent: cancelHtml,
-      }).catch((err) => console.error("Erro ao enviar e-mail em background:", err));
     }
 
     revalidatePath('/meus-agendamentos');

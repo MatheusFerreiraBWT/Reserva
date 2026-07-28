@@ -11,7 +11,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       issuer: "https://login.microsoftonline.com/common/v2.0",
       authorization: {
         params: {
-          scope: "openid profile email User.Read offline_access Calendars.ReadWrite Mail.Send",
+          scope: "openid profile email User.Read",
           prompt: "select_account",
         },
       },
