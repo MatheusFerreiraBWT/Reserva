@@ -23,16 +23,9 @@ export async function createBooking(formData: FormData) {
       return { error: 'Preencha todos os campos obrigatórios, incluindo o horário de término.' };
     }
 
-    // Correção de Fuso Horário: Cria a data preservando rigorosamente a hora local informada
-    const [startHour, startMinute] = startTimeStr.split(':').map(Number);
-    const [endHour, endMinute] = endTimeStr.split(':').map(Number);
-
-    const startTime = new Date(dateStr);
-    startTime.setHours(startHour, startMinute, 0, 0);
-
-    const endTime = new Date(dateStr);
-    endTime.setHours(endHour, endMinute, 0, 0);
-
+    // Correção de Fuso Horário: Força o horário a ser interpretado no fuso de Brasília (-03:00)
+    const startTime = new Date(`${dateStr}T${startTimeStr}:00-03:00`);
+    const endTime = new Date(`${dateStr}T${endTimeStr}:00-03:00`);
     const now = new Date();
 
     if (startTime >= endTime) {
@@ -177,7 +170,7 @@ export async function deleteBooking(bookingId: string) {
           
           <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <p style="margin: 5px 0;"><strong>Data:</strong> ${new Date(booking.startTime).toLocaleDateString('pt-BR')}</p>
-            <p style="margin: 5px 0;"><strong>Horário:</strong> ${new Date(booking.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} às ${new Date(booking.endTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+            <p style="margin: 5px 0;"><strong>Horário:</strong> ${new Date(booking.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })} às ${new Date(booking.endTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}</p>
           </div>
         </div>
       `;
