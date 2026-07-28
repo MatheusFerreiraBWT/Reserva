@@ -23,8 +23,16 @@ export async function createBooking(formData: FormData) {
       return { error: 'Preencha todos os campos obrigatórios, incluindo o horário de término.' };
     }
 
-    const startTime = new Date(`${dateStr}T${startTimeStr}:00`);
-    const endTime = new Date(`${dateStr}T${endTimeStr}:00`);
+    // Correção de Fuso Horário: Cria a data preservando rigorosamente a hora local informada
+    const [startHour, startMinute] = startTimeStr.split(':').map(Number);
+    const [endHour, endMinute] = endTimeStr.split(':').map(Number);
+
+    const startTime = new Date(dateStr);
+    startTime.setHours(startHour, startMinute, 0, 0);
+
+    const endTime = new Date(dateStr);
+    endTime.setHours(endHour, endMinute, 0, 0);
+
     const now = new Date();
 
     if (startTime >= endTime) {
