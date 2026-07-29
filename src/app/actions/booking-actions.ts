@@ -136,24 +136,33 @@ export async function deleteBooking(bookingId: string) {
       return { error: 'Você precisa estar logado para cancelar reservas.' };
     }
 
+    // Incluímos 'user: true' para saber exatamente de quem é a caixa postal no Outlook
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { room: true },
+      include: { 
+        room: true,
+        user: true, 
+      },
     });
 
     if (!booking) {
       return { error: 'Agendamento não encontrado.' };
     }
 
-    const creatorEmail = String(session.user.email).trim().toLowerCase();
+    // E-mail do criador da reserva no Outlook (onde o evento está salvo)
+    const organizerEmail = booking.user?.email || session.user.email;
+    const currentUserEmail = String(session.user.email).trim().toLowerCase();
 
-    // 1. Remove o evento do Calendário do Outlook via Microsoft Graph API (se possuir ID)
+    // 1. Remove o evento do Calendário do Outlook via Microsoft Graph API
     if (booking.outlookEventId) {
       try {
-        await cancelCalendarEventViaGraph(creatorEmail, booking.outlookEventId);
+        console.log(`🗑️ Removendo evento do calendário de: ${organizerEmail}`);
+        await cancelCalendarEventViaGraph(organizerEmail, booking.outlookEventId);
       } catch (graphErr) {
         console.error('⚠️ Não foi possível remover da Graph API:', graphErr);
       }
+    } else {
+      console.warn('⚠️ Agendamento não possui outlookEventId associado.');
     }
 
     // 2. Deleta no banco de dados
@@ -161,7 +170,7 @@ export async function deleteBooking(bookingId: string) {
       where: { id: bookingId },
     });
 
-    // 3. Trata destinatários do cancelamento
+    // 3. Trata destinatários do e-mail de cancelamento
     const extraEmails = booking.attendees
       ? booking.attendees
           .split(',')
@@ -169,7 +178,7 @@ export async function deleteBooking(bookingId: string) {
           .filter((e) => e.length > 0 && e.includes('@'))
       : [];
 
-    const recipients = Array.from(new Set([creatorEmail, ...extraEmails])).filter(
+    const recipients = Array.from(new Set([currentUserEmail, organizerEmail.toLowerCase(), ...extraEmails])).filter(
       (email): email is string => Boolean(email && email.includes('@'))
     );
 

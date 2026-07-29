@@ -106,17 +106,21 @@ export async function createCalendarEventViaGraph({
 }
 
 export async function cancelCalendarEventViaGraph(organizerEmail: string, outlookEventId: string) {
-  if (!outlookEventId) return;
+  if (!outlookEventId || !organizerEmail) return;
 
   const graphClient = getGraphClient(organizerEmail);
   if (!graphClient) return;
 
   try {
+    const cleanId = decodeURIComponent(outlookEventId);
+
+    // Apaga diretamente da caixa do organizador original
     await graphClient
-      .api(`/users/${organizerEmail}/events/${outlookEventId}`)
+      .api(`/users/${organizerEmail}/events/${cleanId}`)
       .delete();
-    console.log('✅ Evento removido do Calendário via Graph API');
+
+    console.log(`✅ Evento apagado com sucesso do calendário de: ${organizerEmail}`);
   } catch (error: any) {
-    console.error('❌ ERRO AO CANCELAR EVENTO VIA GRAPH API:', JSON.stringify(error, null, 2));
+    console.error('❌ ERRO DETALHADO AO APAGAR EVENTO NO GRAPH API:', JSON.stringify(error, null, 2));
   }
 }
