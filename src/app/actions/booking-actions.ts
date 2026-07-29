@@ -4,6 +4,7 @@ import { prisma } from '../../lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { sendBookingEmailWithCalendar, sendCancellationEmail } from '@/lib/nodemailer';
+import { createCalendarEventViaGraph, cancelCalendarEventViaGraph } from '@/lib/graph';
 
 export async function createBooking(formData: FormData) {
   try {
@@ -54,18 +55,7 @@ export async function createBooking(formData: FormData) {
       where: { id: roomId },
     });
 
-    // 1. Cria a reserva no banco de dados
-    const booking = await prisma.booking.create({
-      data: {
-        roomId,
-        userId: session.user.id,
-        startTime,
-        endTime,
-        attendees: attendeesInput.trim() || null,
-      },
-    });
-
-    // 2. Trata e arruma e-mails
+    // 1. Trata e ajusta lista de e-mails
     const creatorEmail = String(session.user.email).trim().toLowerCase();
     const creatorName = session.user.name || 'Colaborador';
 
@@ -76,14 +66,40 @@ export async function createBooking(formData: FormData) {
           .filter((e) => e.length > 0 && e.includes('@'))
       : [];
 
-    // Garante que o criador esteja sempre na lista e remove duplicados
     const recipients = Array.from(new Set([creatorEmail, ...extraEmails])).filter(
       (email): email is string => Boolean(email && email.includes('@'))
     );
 
     console.log('📌 Destinatários do agendamento:', recipients);
 
-    // Dispara os emails
+    // 2. Tenta criar o evento direto no Calendário via Microsoft Graph API
+    let outlookEventId: string | null = null;
+    try {
+      outlookEventId = await createCalendarEventViaGraph({
+        organizerEmail: creatorEmail,
+        roomName: room?.name || 'Reunião',
+        date: dateStr,
+        startTime: startTimeStr,
+        endTime: endTimeStr,
+        attendees: recipients,
+      });
+    } catch (graphErr) {
+      console.error('⚠️ Não foi possível agendar no Graph API (continuando com o banco e e-mail):', graphErr);
+    }
+
+    // 3. Salva a reserva no banco de dados (incluindo o outlookEventId)
+    const booking = await prisma.booking.create({
+      data: {
+        roomId,
+        userId: session.user.id,
+        startTime,
+        endTime,
+        attendees: attendeesInput.trim() || null,
+        outlookEventId,
+      },
+    });
+
+    // 4. Dispara o e-mail em HTML via SMTP/Nodemailer
     if (recipients.length > 0) {
       try {
         await sendBookingEmailWithCalendar({
@@ -96,9 +112,9 @@ export async function createBooking(formData: FormData) {
           organizerEmail: creatorEmail,
           bookingId: booking.id,
         });
-        console.log('✅ Convite de e-mail/calendário enviado com sucesso!');
+        console.log('✅ E-mail de confirmação enviado via SMTP!');
       } catch (err) {
-        console.error('❌ Erro real de envio:', err);
+        console.error('❌ Erro no envio do e-mail SMTP:', err);
       }
     } else {
       console.warn('⚠️ Nenhum e-mail válido foi encontrado para disparo.');
@@ -129,13 +145,23 @@ export async function deleteBooking(bookingId: string) {
       return { error: 'Agendamento não encontrado.' };
     }
 
-    // 1. Deleta no banco primeiro
+    const creatorEmail = String(session.user.email).trim().toLowerCase();
+
+    // 1. Remove o evento do Calendário do Outlook via Microsoft Graph API (se possuir ID)
+    if (booking.outlookEventId) {
+      try {
+        await cancelCalendarEventViaGraph(creatorEmail, booking.outlookEventId);
+      } catch (graphErr) {
+        console.error('⚠️ Não foi possível remover da Graph API:', graphErr);
+      }
+    }
+
+    // 2. Deleta no banco de dados
     await prisma.booking.delete({
       where: { id: bookingId },
     });
 
-    // 2. Trata e higieniza e-mails dos destinatários do cancelamento
-    const creatorEmail = String(session.user.email).trim().toLowerCase();
+    // 3. Trata destinatários do cancelamento
     const extraEmails = booking.attendees
       ? booking.attendees
           .split(',')
@@ -159,7 +185,7 @@ export async function deleteBooking(bookingId: string) {
       timeZone: 'America/Sao_Paulo',
     });
 
-    // Aviso de cancelamento
+    // 4. Dispara e-mail de aviso de cancelamento via SMTP
     if (recipients.length > 0) {
       try {
         await sendCancellationEmail({
@@ -169,7 +195,7 @@ export async function deleteBooking(bookingId: string) {
           startTime: startFormatted,
           endTime: endFormatted,
         });
-        console.log('✅ E-mail de cancelamento enviado com sucesso!');
+        console.log('✅ E-mail de cancelamento enviado com sucesso via SMTP!');
       } catch (err) {
         console.error('Erro ao enviar e-mail de cancelamento via SMTP:', err);
       }
