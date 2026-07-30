@@ -63,7 +63,7 @@ function AdminLogoutButton() {
     >
       <button
         type="submit"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-red-400 transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-red-300 transition-colors cursor-pointer"
         title="Sair da conta"
       >
         <LogOut className="w-3.5 h-3.5" />
@@ -77,25 +77,42 @@ export default async function AdminPage() {
   const { bookings, rooms } = await getAdminData();
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-12">
-      {/* Header Admin */}
-      <header className="bg-slate-900 text-white px-8 py-4 flex items-center justify-between shadow-md">
-        <div className="flex items-center gap-2 font-bold text-lg">
-          <ShieldAlert className="w-6 h-6 text-amber-400" />
-          <span>Painel do Administrador</span>
+    <div className="min-h-screen bg-slate-100 font-sans pb-12">
+      {/* Header Admin em Degradê Translúcido com Blur */}
+      <header className="sticky top-0 z-20 bg-gradient-to-r from-[#00A859]/90 via-[#384C83]/90 to-[#6B12B4]/90 backdrop-blur-md border-b border-white/20 px-6 md:px-8 py-3.5 flex items-center justify-between text-white shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 font-bold text-sm md:text-base tracking-tight">
+            <span className="text-white drop-shadow-sm">SERRA VERDE EXPRESS</span>
+            <span className="text-white/40 font-light">|</span>
+            <span className="text-white drop-shadow-sm">BWT OPERADORA</span>
+          </div>
+          <span className="inline-flex items-center gap-1 bg-[#D4AF37] text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm ml-2">
+            <ShieldAlert className="w-3 h-3" />
+            Painel Admin
+          </span>
         </div>
-        <nav className="flex items-center gap-6 text-sm text-slate-300">
-          <Link href="/" className="hover:text-white">Visão Geral</Link>
-          <Link href="/agendar" className="hover:text-white">Agendar</Link>
-          <Link href="/meus-agendamentos" className="hover:text-white">Meus Agendamentos</Link>
-          <AdminLogoutButton />
+
+        <nav className="flex items-center gap-4 md:gap-6 text-sm font-medium">
+          <Link href="/" className="hover:text-white/80 transition-colors text-white/90 drop-shadow-sm">
+            Salas
+          </Link>
+          <Link href="/agendar" className="hover:text-white/80 transition-colors text-white/90 drop-shadow-sm">
+            Agendar
+          </Link>
+          <Link href="/meus-agendamentos" className="hover:text-white/80 transition-colors text-white/90 drop-shadow-sm">
+            Meus Agendamentos
+          </Link>
+          
+          <div className="border-l border-white/20 pl-4 flex items-center">
+            <AdminLogoutButton />
+          </div>
         </nav>
       </header>
 
       <main className="max-w-6xl mx-auto pt-8 px-4 space-y-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#00A859] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Voltar para Início
@@ -107,7 +124,7 @@ export default async function AdminPage() {
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">
               Gestão do Sistema
             </h1>
-            <p className="text-xs font-bold text-slate-500 tracking-wider uppercase mt-1">
+            <p className="text-xs font-bold text-[#00A859] tracking-wider uppercase mt-1">
               AGENDA & ESTRUTURA DE SALAS
             </p>
           </div>
@@ -118,10 +135,10 @@ export default async function AdminPage() {
         </div>
 
         {/* SEÇÃO 1: GERENCIAMENTO DE SALAS */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
-              <DoorOpen className="w-4 h-4 text-blue-600" />
+              <DoorOpen className="w-4 h-4 text-[#00A859]" />
               <span>Salas Cadastradas</span>
             </div>
             <span className="text-xs text-slate-400 font-medium">{rooms.length} sala(s)</span>
@@ -147,7 +164,7 @@ export default async function AdminPage() {
                   {rooms.map((room) => (
                     <tr key={room.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4 font-bold text-slate-900">
-                        Sala {room.name}
+                        {room.name.toLowerCase().startsWith('sala') ? room.name : `Sala ${room.name}`}
                       </td>
                       <td className="p-4 text-slate-500">
                         {room.description || 'Sem descrição'}
@@ -169,9 +186,8 @@ export default async function AdminPage() {
                           <button
                             type="submit"
                             title="Excluir Sala"
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                           >
-                            <DoorOpen className="w-4 h-4 hidden" />
                             <span className="text-xs font-bold text-red-500 px-1">Excluir</span>
                           </button>
                         </form>

@@ -160,7 +160,7 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
   if (isSuccess) {
     return (
       <div className="py-8 flex flex-col items-center text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-green-600 animate-bounce">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-[#00A859] animate-bounce">
           <CheckCircle2 className="w-10 h-10" />
         </div>
         <h3 className="text-2xl font-bold text-slate-900 mb-1">
@@ -193,7 +193,7 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
 
         <a
           href="/"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all shadow-sm"
+          className="bg-[#00A859] hover:bg-[#008f4c] text-white font-semibold text-xs px-6 py-3 rounded-xl transition-all shadow-sm"
         >
           Voltar para Início
         </a>
@@ -222,7 +222,7 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
             setStartTime(null);
             setEndTime(null);
           }}
-          className="w-full text-sm p-3.5 border-2 border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white transition-all"
+          className="w-full text-sm p-3.5 border-2 border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:border-[#00A859] bg-white transition-all"
         >
           {rooms.map((room) => (
             <option key={room.id} value={room.id}>
@@ -246,7 +246,7 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
             setStartTime(null);
             setEndTime(null);
           }}
-          className="w-full text-sm p-3.5 border-2 border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white transition-all"
+          className="w-full text-sm p-3.5 border-2 border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:border-[#00A859] bg-white transition-all"
         />
       </div>
 
@@ -261,7 +261,7 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
           value={attendees}
           onChange={(e) => setAttendees(e.target.value)}
           placeholder="ex: joao@empresa.com, maria@empresa.com"
-          className="w-full text-sm p-3.5 border-2 border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white transition-all"
+          className="w-full text-sm p-3.5 border-2 border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:border-[#00A859] bg-white transition-all"
         />
         <p className="text-[11px] text-slate-400 mt-1">
           Separe múltiplos e-mails por vírgula.
@@ -278,7 +278,7 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
             <button
               type="button"
               onClick={() => { setStartTime(null); setEndTime(null); }}
-              className="text-xs font-bold text-blue-600 hover:underline"
+              className="text-xs font-bold text-[#00A859] hover:underline cursor-pointer"
             >
               Limpar seleção
             </button>
@@ -307,12 +307,12 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
                 type="button"
                 disabled={disabled}
                 onClick={() => handleSlotClick(slot.start, slot.end)}
-                className={`flex items-center justify-between p-3 rounded-xl border-2 text-xs font-semibold transition-all ${
+                className={`flex items-center justify-between p-3 rounded-xl border-2 text-xs font-semibold transition-all cursor-pointer ${
                   disabled
                     ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
                     : isInRange
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-[1.02]'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-blue-500 hover:text-blue-600'
+                    ? 'bg-[#00A859] text-white border-[#00A859] shadow-md scale-[1.02]'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-[#00A859] hover:text-[#00A859]'
                 }`}
               >
                 <span className="flex items-center gap-1.5">
@@ -335,7 +335,7 @@ function BookingFormContent({ rooms }: { rooms: Room[] }) {
         <button
           type="submit"
           disabled={isLoading || !startTime || !endTime}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3.5 rounded-xl transition-all shadow-md disabled:opacity-50"
+          className="w-full bg-[#00A859] hover:bg-[#008f4c] text-white font-bold text-sm py-3.5 rounded-xl transition-all shadow-md disabled:opacity-50 disabled:bg-slate-300 disabled:cursor-not-allowed cursor-pointer"
         >
           {isLoading 
             ? 'Confirmando...' 

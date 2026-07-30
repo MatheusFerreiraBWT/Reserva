@@ -25,68 +25,69 @@ export default async function HomePage() {
   const { rooms, userRole } = await getHomePageData();
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-12">
-      {/* Header Superior Limpo */}
-      <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-blue-600 font-bold text-lg">
-          <Calendar className="w-6 h-6" />
-          <span>ReservaSalas</span>
+    <div className="min-h-screen bg-slate-100 font-sans pb-12">
+      {/* NAVBAR ACIMA DO BANNER COM DEGRADÊ TRANSLÚCIDO E BLUR */}
+      <header className="sticky top-0 z-20 bg-gradient-to-r from-[#00A859]/90 via-[#384C83]/90 to-[#6B12B4]/90 backdrop-blur-md border-b border-white/20 px-6 md:px-8 py-3.5 flex items-center justify-between text-white shadow-md">
+        <div className="flex items-center gap-2 font-bold text-sm md:text-base tracking-tight">
+          <span className="text-white drop-shadow-sm">SERRA VERDE EXPRESS</span>
+          <span className="text-white/40 font-light">|</span>
+          <span className="text-white drop-shadow-sm">BWT OPERADORA</span>
         </div>
         
-        <nav className="flex items-center gap-6 text-sm text-slate-600">
-          <Link href="/" className="font-bold text-slate-900">
+        <nav className="flex items-center gap-4 md:gap-6 text-sm font-medium">
+          <Link href="/" className="text-white font-bold border-b-2 border-white pb-0.5 drop-shadow-sm">
             Salas
           </Link>
-          <Link href="/meus-agendamentos" className="hover:text-slate-900 font-medium">
+          <Link href="/meus-agendamentos" className="hover:text-white/80 transition-colors text-white/90 drop-shadow-sm">
             Meus Agendamentos
           </Link>
 
-          {/* Se o usuário for ADMIN, mostra o atalho para o Painel */}
           {userRole === 'ADMIN' && (
             <Link 
               href="/admin" 
-              className="inline-flex items-center gap-1 text-amber-600 font-bold hover:text-amber-700"
+              className="inline-flex items-center gap-1.5 bg-[#D4AF37] text-slate-950 px-3 py-1 rounded-full text-xs font-bold hover:bg-yellow-400 transition-colors shadow-sm"
             >
-              <ShieldAlert className="w-4 h-4" />
+              <ShieldAlert className="w-3.5 h-3.5" />
               <span>Painel Admin</span>
             </Link>
           )}
 
-          {/* Botão de Sair da conta */}
-          <LogoutButton />
+          <div className="border-l border-white/20 pl-4 flex items-center">
+            <LogoutButton />
+          </div>
         </nav>
       </header>
 
-      {/* Banner Azul Full Width */}
-      <section className="bg-blue-600 text-white py-12 px-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-extrabold tracking-tight mb-2">
-            Agende sua sala de reunião em segundos
-          </h1>
-          <p className="text-sm text-blue-100 font-normal">
-            Escolha uma sala, selecione o horário e confirme. Sem conflitos, sem retrabalho.
-          </p>
-        </div>
+      {/* BANNER LOGO ABAIXO DA NAVBAR */}
+      <section className="w-full bg-slate-950 overflow-hidden shadow-md">
+        <img 
+          src="/banner-grupo1.png" 
+          alt="Serra Verde Express e BWT Operadora" 
+          className="w-full h-auto max-h-[220px] md:max-h-[280px] object-cover block"
+        />
       </section>
 
       {/* Conteúdo Principal (Lista de Salas) */}
       <main className="max-w-6xl mx-auto pt-8 px-8">
-        <div className="mb-6">
-          <h2 className="text-base font-bold text-slate-900">
-            Nossas salas
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Selecione uma sala para ver a disponibilidade.
-          </p>
+        <div className="mb-6 flex justify-between items-end border-b border-slate-200 pb-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-[#00A859]" />
+              Salas de Reunião Disponíveis
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Selecione uma sala abaixo para verificar os horários e confirmar a reserva.
+            </p>
+          </div>
         </div>
 
         {/* Grid de Salas */}
         {rooms.length === 0 ? (
-          <div className="bg-white p-12 text-center border border-dashed border-slate-300 rounded-2xl text-slate-400">
+          <div className="bg-white p-12 text-center border border-dashed border-slate-300 rounded-2xl text-slate-500 shadow-sm">
             <p className="text-sm font-medium">Nenhuma sala cadastrada no momento.</p>
             {userRole === 'ADMIN' && (
-              <p className="text-xs mt-1">
-                Acesse o <Link href="/admin" className="text-blue-600 font-bold underline">Painel Admin</Link> para cadastrar novas salas.
+              <p className="text-xs mt-2">
+                Acesse o <Link href="/admin" className="text-[#00A859] font-bold underline hover:text-[#D4AF37]">Painel Admin</Link> para cadastrar novos espaços.
               </p>
             )}
           </div>
