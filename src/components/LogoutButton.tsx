@@ -1,22 +1,18 @@
-import { signOut } from "@/auth";
-import { LogOut } from "lucide-react";
+'use client';
+
+import { signOut } from 'next-auth/react';
+import { LogOut } from 'lucide-react';
 
 export function LogoutButton() {
   return (
-    <form
-      action={async () => {
-        "use server";
-        await signOut({ redirectTo: "/login" });
-      }}
+    <button
+      type="button"
+      onClick={() => signOut({ callbackUrl: '/login' })}
+      className="inline-flex items-center gap-1.5 text-xs font-medium text-white/90 hover:text-red-300 transition-colors cursor-pointer"
+      title="Sair da conta"
     >
-      <button
-        type="submit"
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white hover:text-red-200 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-        title="Encerrar sessão"
-      >
-        <LogOut className="w-3.5 h-3.5 text-white" />
-        <span>Sair</span>
-      </button>
-    </form>
+      <LogOut className="w-3.5 h-3.5" />
+      <span>Sair</span>
+    </button>
   );
 }

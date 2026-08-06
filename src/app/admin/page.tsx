@@ -1,11 +1,12 @@
 import { prisma } from '../../lib/prisma';
 import Link from 'next/link';
-import { ArrowLeft, ShieldAlert, DoorOpen, LogOut } from 'lucide-react';
+import { ArrowLeft, DoorOpen } from 'lucide-react';
 import { deleteRoom } from '../actions/room-actions';
 import { CreateRoomModal } from '../../components/CreateRoomModal';
 import { EditRoomModal } from '../../components/EditRoomModal';
 import { AdminCalendar } from '../../components/AdminCalendar';
-import { signOut } from '@/auth';
+import { auth } from '@/auth';
+import { Navbar } from '@/components/Navbar';
 
 async function getAdminData() {
   const rawBookings = await prisma.booking.findMany({
@@ -52,64 +53,17 @@ async function getAdminData() {
   return { bookings, rooms };
 }
 
-// Botão de Sair do Admin
-function AdminLogoutButton() {
-  return (
-    <form
-      action={async () => {
-        'use server';
-        await signOut({ redirectTo: '/login' });
-      }}
-    >
-      <button
-        type="submit"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-red-300 transition-colors cursor-pointer"
-        title="Sair da conta"
-      >
-        <LogOut className="w-3.5 h-3.5" />
-        <span>Sair</span>
-      </button>
-    </form>
-  );
-}
-
 export default async function AdminPage() {
+  const session = await auth();
+  const userRole = (session?.user as any)?.role;
   const { bookings, rooms } = await getAdminData();
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans pb-12">
-      {/* Header Admin em Degradê Translúcido com Blur */}
-      <header className="sticky top-0 z-20 bg-gradient-to-r from-[#00A859]/90 via-[#384C83]/90 to-[#6B12B4]/90 backdrop-blur-md border-b border-white/20 px-6 md:px-8 py-3.5 flex items-center justify-between text-white shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 font-bold text-sm md:text-base tracking-tight">
-            <span className="text-white drop-shadow-sm">SERRA VERDE EXPRESS</span>
-            <span className="text-white/40 font-light">|</span>
-            <span className="text-white drop-shadow-sm">BWT OPERADORA</span>
-          </div>
-          <span className="inline-flex items-center gap-1 bg-[#D4AF37] text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm ml-2">
-            <ShieldAlert className="w-3 h-3" />
-            Painel Admin
-          </span>
-        </div>
+    <div className="min-h-screen bg-slate-100 font-sans pb-12 overflow-x-hidden">
+      {/* NAVBAR RESPONSIVA PADRONIZADA COM MENU HAMBÚRGUER */}
+      <Navbar userRole={userRole} />
 
-        <nav className="flex items-center gap-4 md:gap-6 text-sm font-medium">
-          <Link href="/" className="hover:text-white/80 transition-colors text-white/90 drop-shadow-sm">
-            Salas
-          </Link>
-          <Link href="/agendar" className="hover:text-white/80 transition-colors text-white/90 drop-shadow-sm">
-            Agendar
-          </Link>
-          <Link href="/meus-agendamentos" className="hover:text-white/80 transition-colors text-white/90 drop-shadow-sm">
-            Meus Agendamentos
-          </Link>
-          
-          <div className="border-l border-white/20 pl-4 flex items-center">
-            <AdminLogoutButton />
-          </div>
-        </nav>
-      </header>
-
-      <main className="max-w-6xl mx-auto pt-8 px-4 space-y-8">
+      <main className="max-w-6xl mx-auto pt-6 sm:pt-8 px-4 sm:px-6 space-y-6 sm:space-y-8">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#00A859] transition-colors"
@@ -118,26 +72,26 @@ export default async function AdminPage() {
           Voltar para Início
         </Link>
 
-        {/* Topo do Painel */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Topo do Painel Adaptado para Mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
               Gestão do Sistema
             </h1>
-            <p className="text-xs font-bold text-[#00A859] tracking-wider uppercase mt-1">
+            <p className="text-[10px] sm:text-xs font-bold text-[#00A859] tracking-wider uppercase mt-0.5">
               AGENDA & ESTRUTURA DE SALAS
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <CreateRoomModal />
           </div>
         </div>
 
         {/* SEÇÃO 1: GERENCIAMENTO DE SALAS */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
+          <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-2 font-bold text-slate-800 text-xs sm:text-sm">
               <DoorOpen className="w-4 h-4 text-[#00A859]" />
               <span>Salas Cadastradas</span>
             </div>
@@ -149,48 +103,50 @@ export default async function AdminPage() {
               Nenhuma sala cadastrada. Clique em "Nova Sala" acima.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-600">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left text-xs text-slate-600 min-w-[600px]">
                 <thead className="bg-slate-50 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-100">
                   <tr>
-                    <th className="p-4">Nome</th>
-                    <th className="p-4">Descrição / Local</th>
-                    <th className="p-4">Capacidade</th>
-                    <th className="p-4">Reservas Ativas</th>
-                    <th className="p-4 text-right">Ações</th>
+                    <th className="p-3 sm:p-4">Nome</th>
+                    <th className="p-3 sm:p-4">Descrição / Local</th>
+                    <th className="p-3 sm:p-4">Capacidade</th>
+                    <th className="p-3 sm:p-4">Reservas Ativas</th>
+                    <th className="p-3 sm:p-4 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {rooms.map((room) => (
                     <tr key={room.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-4 font-bold text-slate-900">
+                      <td className="p-3 sm:p-4 font-bold text-slate-900 whitespace-nowrap">
                         {room.name.toLowerCase().startsWith('sala') ? room.name : `Sala ${room.name}`}
                       </td>
-                      <td className="p-4 text-slate-500">
+                      <td className="p-3 sm:p-4 text-slate-500">
                         {room.description || 'Sem descrição'}
                       </td>
-                      <td className="p-4 font-bold text-slate-700">
+                      <td className="p-3 sm:p-4 font-bold text-slate-700 whitespace-nowrap">
                         {room.capacity} pessoas
                       </td>
-                      <td className="p-4 font-medium text-slate-600">
+                      <td className="p-3 sm:p-4 font-medium text-slate-600 whitespace-nowrap">
                         {room._count.bookings} reserva(s)
                       </td>
-                      <td className="p-4 text-right flex items-center justify-end gap-1">
-                        <EditRoomModal room={room} />
-                        <form
-                          action={async () => {
-                            'use server';
-                            await deleteRoom(room.id);
-                          }}
-                        >
-                          <button
-                            type="submit"
-                            title="Excluir Sala"
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      <td className="p-3 sm:p-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <EditRoomModal room={room} />
+                          <form
+                            action={async () => {
+                              'use server';
+                              await deleteRoom(room.id);
+                            }}
                           >
-                            <span className="text-xs font-bold text-red-500 px-1">Excluir</span>
-                          </button>
-                        </form>
+                            <button
+                              type="submit"
+                              title="Excluir Sala"
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <span className="text-xs font-bold text-red-500 px-1">Excluir</span>
+                            </button>
+                          </form>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -201,7 +157,9 @@ export default async function AdminPage() {
         </div>
 
         {/* SEÇÃO 2: CALENDÁRIO / AGENDA INTERATIVA */}
-        <AdminCalendar bookings={bookings} rooms={rooms} />
+        <div className="overflow-x-auto">
+          <AdminCalendar bookings={bookings} rooms={rooms} />
+        </div>
 
       </main>
     </div>
