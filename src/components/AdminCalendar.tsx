@@ -30,7 +30,7 @@ interface Room {
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 8); // 08:00 às 18:00
 
 export function AdminCalendar({ bookings, rooms }: { bookings: Booking[]; rooms: Room[] }) {
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 24)); // Inicia na data de referência
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string>('all');
 
