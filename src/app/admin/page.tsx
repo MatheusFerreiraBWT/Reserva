@@ -9,6 +9,8 @@ import { auth } from '@/auth';
 import { Navbar } from '@/components/Navbar';
 
 async function getAdminData() {
+  const now = new Date();
+
   const rawBookings = await prisma.booking.findMany({
     select: {
       id: true,
@@ -34,8 +36,21 @@ async function getAdminData() {
     orderBy: { startTime: 'asc' },
   });
 
+  // Filtra as reservas diretamente no Prisma trazendo apenas as ativas (término >= agora)
   const rooms = await prisma.room.findMany({
-    include: { _count: { select: { bookings: true } } },
+    include: {
+      _count: {
+        select: {
+          bookings: {
+            where: {
+              endTime: {
+                gte: now, // Considera "Ativa" qualquer reserva que termina de hoje em diante
+              },
+            },
+          },
+        },
+      },
+    },
     orderBy: { name: 'asc' },
   });
 
