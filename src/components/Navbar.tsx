@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ShieldAlert, Menu, X } from 'lucide-react';
 import { LogoutButton } from '@/components/LogoutButton';
 
@@ -11,10 +12,11 @@ interface NavbarProps {
 
 export function Navbar({ userRole }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-20 bg-gradient-to-r from-[#00A859]/90 via-[#384C83]/90 to-[#6B12B4]/90 backdrop-blur-md border-b border-white/20 px-3 sm:px-6 md:px-8 py-3 flex items-center justify-between text-white shadow-md w-full">
-      {/* Logos / Título (Ajustado para não estourar no mobile) */}
+      {/* Logos / Título */}
       <div className="flex items-center gap-1.5 font-bold text-[11px] min-[380px]:text-xs sm:text-sm md:text-base tracking-tight truncate pr-2">
         <span className="text-white drop-shadow-sm whitespace-nowrap">SERRA VERDE EXPRESS</span>
         <span className="text-white/40 font-light">|</span>
@@ -23,17 +25,35 @@ export function Navbar({ userRole }: NavbarProps) {
 
       {/* Menu Desktop */}
       <nav className="hidden sm:flex items-center gap-4 md:gap-6 text-sm font-medium">
-        <Link href="/" className="text-white font-bold border-b-2 border-white pb-0.5 drop-shadow-sm">
+        <Link
+          href="/"
+          className={`pb-0.5 drop-shadow-sm transition-colors ${
+            pathname === '/'
+              ? 'text-white font-bold border-b-2 border-white'
+              : 'text-white/80 hover:text-white'
+          }`}
+        >
           Salas
         </Link>
-        <Link href="/meus-agendamentos" className="hover:text-white/80 transition-colors text-white/90 drop-shadow-sm">
+        <Link
+          href="/meus-agendamentos"
+          className={`pb-0.5 drop-shadow-sm transition-colors ${
+            pathname === '/meus-agendamentos'
+              ? 'text-white font-bold border-b-2 border-white'
+              : 'text-white/80 hover:text-white'
+          }`}
+        >
           Meus Agendamentos
         </Link>
 
         {userRole === 'ADMIN' && (
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1.5 bg-[#D4AF37] text-slate-950 px-3 py-1 rounded-full text-xs font-bold hover:bg-yellow-400 transition-colors shadow-sm"
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-colors shadow-sm ${
+              pathname === '/admin'
+                ? 'bg-yellow-400 text-slate-950 ring-2 ring-white/50'
+                : 'bg-[#D4AF37] text-slate-950 hover:bg-yellow-400'
+            }`}
           >
             <ShieldAlert className="w-3.5 h-3.5" />
             <span>Painel Admin</span>
@@ -45,7 +65,7 @@ export function Navbar({ userRole }: NavbarProps) {
         </div>
       </nav>
 
-      {/* Botão Hambúrguer (Com shrink-0 para NUNCA sumir da tela) */}
+      {/* Botão Hambúrguer */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -61,14 +81,22 @@ export function Navbar({ userRole }: NavbarProps) {
           <Link
             href="/"
             onClick={() => setIsOpen(false)}
-            className="text-white font-bold py-1 border-b border-white/10"
+            className={`py-1 transition-colors ${
+              pathname === '/'
+                ? 'text-white font-bold border-b border-white'
+                : 'text-white/80 hover:text-white'
+            }`}
           >
             Salas
           </Link>
           <Link
             href="/meus-agendamentos"
             onClick={() => setIsOpen(false)}
-            className="text-white/90 hover:text-white py-1"
+            className={`py-1 transition-colors ${
+              pathname === '/meus-agendamentos'
+                ? 'text-white font-bold border-b border-white'
+                : 'text-white/80 hover:text-white'
+            }`}
           >
             Meus Agendamentos
           </Link>
@@ -77,7 +105,11 @@ export function Navbar({ userRole }: NavbarProps) {
             <Link
               href="/admin"
               onClick={() => setIsOpen(false)}
-              className="inline-flex items-center gap-1.5 bg-[#D4AF37] text-slate-950 px-3 py-1.5 rounded-full text-xs font-bold w-fit my-1"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold w-fit my-1 ${
+                pathname === '/admin'
+                  ? 'bg-yellow-400 text-slate-950 ring-2 ring-white/50'
+                  : 'bg-[#D4AF37] text-slate-950'
+              }`}
             >
               <ShieldAlert className="w-3.5 h-3.5" />
               <span>Painel Admin</span>
