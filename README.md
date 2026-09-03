@@ -30,18 +30,42 @@ Antes de iniciar a instalação no servidor de produção/interno, certifique-se
 Crie um arquivo `.env` na raiz do projeto dentro do servidor e configure as variáveis de acordo com o ambiente corporativo:
 
 ```env
-# Conexão com o Banco de Dados
-DATABASE_URL="postgresql://USUARIO:SENHA@HOST:5432/NOME_DO_BANCO?schema=public"
+# ==========================================
+# ⚡ SUPABASE & BANCO DE DADOS (Prisma)
+# ==========================================
+NEXT_PUBLIC_SUPABASE_URL="[https://sua-url.supabase.co](https://sua-url.supabase.co)"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sua-chave-publica-supabase"
 
-# Configuração do NextAuth / Autenticação
-NEXTAUTH_URL="http://IP_OU_DOMINIO_DO_SERVIDOR:3000"
-NEXTAUTH_SECRET="sua_chave_secreta_gerada_aqui"
+DATABASE_URL="postgresql://usuario:senha@host:5432/dbname?pgbouncer=true"
+DIRECT_URL="postgresql://usuario:senha@host:5432/dbname"
 
-# Configurações de E-mail (SMTP corporativo / Exchange / M365)
-SMTP_HOST="smtp.office365.com"
+# ==========================================
+# 🔐 AUTENTICAÇÃO (NextAuth v5)
+# ==========================================
+NEXTAUTH_URL="http://localhost:3000"
+# Gere uma chave aleatória usando: npx auth secret
+AUTH_SECRET="seu_auth_secret_aqui"
+
+# ==========================================
+# 🟦 MICROSOFT AZURE ENTRA ID
+# ==========================================
+AZURE_AD_CLIENT_ID="seu_azure_client_id"
+AZURE_AD_CLIENT_SECRET="seu_azure_client_secret"
+AZURE_AD_TENANT_ID="common"
+
+# Tenants Específicos das Organizações
+AZURE_TENANT_ID_BWT="tenant_id_bwt"
+AZURE_TENANT_ID_SERRA_VERDE="tenant_id_serra_verde"
+
+# ==========================================
+# 📧 SERVIÇO DE E-MAIL (SMTP)
+# ==========================================
+SMTP_HOST="smtp.seu-servidor.com"
 SMTP_PORT=587
-SMTP_USER="no-reply@suaempresa.com.br"
-SMTP_PASS="sua_senha_aqui"
+SMTP_USER="seu-email@dominio.com"
+SMTP_PASS="sua_senha_smtp"
+
+
 🚀 Passo a Passo de Instalação e DeploySiga os comandos abaixo dentro da pasta raiz do projeto no servidor:1. Instalar as dependênciasBashnpm install
 2. Executar as migrações do Banco de Dados (Prisma)Este comando criará ou atualizará a estrutura de tabelas no banco de dados configurado no .env:Bashnpx prisma migrate deploy
 (Opcional) Caso seja a primeira vez e precise gerar os tipos do cliente Prisma:Bashnpx prisma generate
